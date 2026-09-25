@@ -1,0 +1,73 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: fraud-service
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/fraud_db
+      auto-index-creation: true
+      uuid-representation: standard
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: fraud-service-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  health:
+    mongo:
+      enabled: true
+    kafka:
+      enabled: true
+
+fraud:
+  analysis:
+    risk-thresholds:
+      low: 0.3
+      medium: 0.6
+      high: 0.8
+    velocity:
+      window-minutes: 60
+      max-transactions: 10
+    rules:
+      - name: high-amount
+        threshold: 10000
+        risk-increase: 0.3
+      - name: velocity-check
+        max-transactions: 20
+        risk-increase: 0.2
+      - name: suspicious-card-pattern
+        patterns: ["4111", "4000"]
+        risk-increase: 0.15
+  external-services:
+    risk-bureau:
+      url: http://risk-bureau:8084/api/v1/risk
+      timeout-ms: 5000
+      retry-attempts: 3
+    blacklist:
+      url: http://blacklist:8085/api/v1/check
+      timeout-ms: 3000
+      retry-attempts: 2
+
+logging:
+  level:
+    root: INFO
+    com.pragma.fraudservice: DEBUG
+    org.springframework.kafka: INFO
+    org.mongodb.driver: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"

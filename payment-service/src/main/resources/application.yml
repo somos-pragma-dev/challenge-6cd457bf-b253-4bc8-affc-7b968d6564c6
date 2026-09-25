@@ -1,0 +1,51 @@
+spring:
+  application:
+    name: payment-service
+  
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/payment_service
+      auto-index-creation: true
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: payment-service-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      retries: 3
+      acks: all
+
+server:
+  port: 8081
+  
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.pragma.paymentservice: DEBUG
+    org.springframework.data.mongodb: DEBUG
+    org.springframework.kafka: DEBUG
+    reactor.netty.http.client: DEBUG
+
+app:
+  fraud-service:
+    url: http://localhost:8082/fraud-check
+  
+  event-sourcing:
+    event-store-collection: payment_events
+    snapshot-frequency: 10
+    max-snapshots: 5
